@@ -1,0 +1,273 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { ShieldAlert } from 'lucide-react';
+import type { LevelComponentProps } from '../../game/types';
+import { sound } from '../../utils/sound';
+
+export const Level12FinalBoss: React.FC<LevelComponentProps> = ({
+  isPaused,
+  mode,
+  activeModifier,
+  onSuccess,
+  onFail,
+  onChaosSpike,
+}) => {
+  // Phase 1: Catch Boss Duck | Phase 2: Type HUMN | Phase 3: Hold Confirm 2.0s
+  const [phase, setPhase] = useState<1 | 2 | 3>(1);
+  const [duckPos, setDuckPos] = useState({ x: 50, y: 46 });
+  const [duckDodged, setDuckDodged] = useState(false);
+
+  const [codeInput, setCodeInput] = useState('');
+
+  const [holding, setHolding] = useState(false);
+  const [holdPct, setHoldPct] = useState(0);
+  const holdRafRef = useRef<number | null>(null);
+  const holdStartRef = useRef<number>(0);
+  const finishedRef = useRef(false);
+  const onSuccessRef = useRef(onSuccess);
+  onSuccessRef.current = onSuccess;
+
+  const isAggressive = mode === 'nightmare' || activeModifier?.id === 'high-voltage';
+
+  useEffect(() => {
+    if (phase !== 1 || isPaused) return;
+    const interval = window.setInterval(() => {
+      setDuckPos({
+        x: 20 + Math.floor(Math.random() * 60),
+        y: 26 + Math.floor(Math.random() * 48),
+      });
+    }, isAggressive ? 780 : 1150);
+    return () => window.clearInterval(interval);
+  }, [phase, isPaused, isAggressive]);
+
+  useEffect(() => {
+    if (isPaused && holding) {
+      setHolding(false);
+      setHoldPct(0);
+    }
+  }, [isPaused, holding]);
+
+  useEffect(() => {
+    if (!holding) return;
+    const handleBlur = () => {
+      if (finishedRef.current) return;
+      setHolding(false);
+      setHoldPct(0);
+    };
+    window.addEventListener('blur', handleBlur);
+    return () => window.removeEventListener('blur', handleBlur);
+  }, [holding]);
+
+  useEffect(() => {
+    if (!holding || phase !== 3 || isPaused) {
+      if (holdRafRef.current) cancelAnimationFrame(holdRafRef.current);
+      return;
+    }
+    holdStartRef.current = performance.now();
+    const duration = 2000;
+
+    const tick = (now: number) => {
+      const elapsed = now - holdStartRef.current;
+      const pct = Math.min(100, (elapsed / duration) * 100);
+      setHoldPct(pct);
+      sound.holdTick(pct);
+      if (pct >= 100 && !finishedRef.current) {
+        finishedRef.current = true;
+        setHolding(false);
+        onSuccessRef.current('LOCK SHATTERED! You defeated CAPTCHA FROM HELL.');
+        return;
+      }
+      holdRafRef.current = requestAnimationFrame(tick);
+    };
+
+    holdRafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (holdRafRef.current) cancelAnimationFrame(holdRafRef.current);
+    };
+  }, [holding, phase, isPaused]);
+
+  const handleBossDuckClick = () => {
+    if (isPaused) return;
+    if (!duckDodged) {
+      sound.quack();
+      setDuckDodged(true);
+      onChaosSpike?.(3);
+      setDuckPos({ x: 26, y: 65 });
+      return;
+    }
+    sound.success();
+    setPhase(2);
+  };
+
+  const handleCodeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isPaused) return;
+    if (codeInput.trim().toUpperCase() === 'HUMN') {
+      sound.success();
+      setPhase(3);
+    } else {
+      onFail('Override rejected! Type the exact 4 letters: HUMN.');
+    }
+  };
+
+  const startHold = () => {
+    if (finishedRef.current || isPaused) return;
+    sound.glitch();
+    setHolding(true);
+  };
+
+  const cancelHold = () => {
+    if (finishedRef.current) return;
+    setHolding(false);
+    setHoldPct(0);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between border-b border-[#333333] pb-2.5 text-xs">
+        <span className="inline-flex items-center gap-1.5 font-mono font-semibold text-[#D48A8A]">
+          <ShieldAlert className="h-4 w-4 text-[#B84B4B]" />
+          FINAL MELTDOWN · PHASE {phase} / 3
+        </span>
+        <span className="font-mono-tabular text-[#929292]">
+          {phase === 1 && 'Target: Boss Duck'}
+          {phase === 2 && 'Target: Override Code'}
+          {phase === 3 && 'Target: Hold 2.0s'}
+        </span>
+      </div>
+
+      {phase === 1 && (
+        <div className="space-y-2.5">
+          <p className="text-xs text-[#EEEEEE]">
+            {duckDodged
+              ? 'Boss Duck took 1 hit! Catch it ONE more time!'
+              : 'Phase 1: Click the Sunglasses Boss Duck twice while ignoring fake VERIFY buttons.'}
+          </p>
+          <div className="relative h-56 w-full touch-none select-none overflow-hidden rounded-md border border-[#B84B4B]/45 bg-[#141414]">
+            <button
+              type="button"
+              onClick={() => onFail('That was a decoy VERIFY button! Aim for the duck!')}
+              className="absolute left-[14%] top-[18%] min-h-[44px] rounded border border-[#333333] bg-[#222222] px-3.5 py-2 text-xs font-semibold text-[#929292] hover:border-[#B84B4B]"
+            >
+              FAKE VERIFY
+            </button>
+            <button
+              type="button"
+              onClick={() => onFail('Still a decoy! The duck is wearing sunglasses!')}
+              className="absolute bottom-[14%] right-[12%] min-h-[44px] rounded border border-[#333333] bg-[#222222] px-3.5 py-2 text-xs font-semibold text-[#929292] hover:border-[#B84B4B]"
+            >
+              SKIP TEST
+            </button>
+
+            <button
+              type="button"
+              onClick={handleBossDuckClick}
+              aria-label="Sunglasses Boss Duck"
+              style={{
+                left: `${duckPos.x}%`,
+                top: `${duckPos.y}%`,
+                transform: 'translate(-50%, -50%)',
+              }}
+              className="absolute z-10 flex min-h-[60px] min-w-[60px] flex-col items-center justify-center rounded-full p-1 transition-all duration-300 hover:scale-110"
+            >
+              <svg viewBox="0 0 64 64" className="h-14 w-14" aria-hidden="true">
+                <ellipse cx="30" cy="42" rx="19" ry="13" fill="#FACC15" stroke="#111111" strokeWidth="2.5" />
+                <circle cx="40" cy="24" r="12" fill="#FACC15" stroke="#111111" strokeWidth="2.5" />
+                <polygon points="50,22 62,25 50,29" fill="#EA580C" stroke="#111111" strokeWidth="2" />
+                <rect x="34" y="19" width="16" height="6" rx="1.5" fill="#111111" />
+                <line x1="29" y1="22" x2="34" y2="22" stroke="#111111" strokeWidth="2" />
+              </svg>
+              <span className="rounded bg-[#B84B4B] px-1.5 font-mono text-[10px] font-bold text-[#EEEEEE]">
+                {duckDodged ? '1 HP' : 'BOSS'}
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {phase === 2 && (
+        <form onSubmit={handleCodeSubmit} className="space-y-4">
+          <div className="rounded-md border border-[#B84B4B]/45 bg-[#201717] p-4 text-center">
+            <p className="mb-2 text-xs text-[#D48A8A]">
+              Phase 2: Type the emergency override code before the firewall reboots!
+            </p>
+            <div className="text-corrupt font-mono text-3xl font-bold tracking-[0.35em] text-[#EEEEEE]">
+              HUMN
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <label htmlFor="boss-override-code" className="sr-only">
+              Type emergency override code HUMN
+            </label>
+            <input
+              id="boss-override-code"
+              type="text"
+              value={codeInput}
+              onChange={(e) => setCodeInput(e.target.value)}
+              placeholder="Type HUMN"
+              autoFocus
+              autoComplete="off"
+              className="min-h-[44px] flex-1 rounded-md border border-[#B84B4B]/55 bg-[#141414] px-3.5 py-2 font-mono text-base uppercase tracking-[0.25em] text-[#EEEEEE] focus:border-[#B84B4B] focus:outline-none"
+            />
+            <button
+              type="submit"
+              className="min-h-[44px] rounded-md bg-[#B84B4B] px-6 py-2.5 text-sm font-semibold text-[#EEEEEE] hover:bg-[#A03E3E]"
+            >
+              Override
+            </button>
+          </div>
+        </form>
+      )}
+
+      {phase === 3 && (
+        <div className="space-y-4 rounded-md border border-[#B84B4B]/55 bg-[#201717] p-5 text-center">
+          <p className="text-sm font-semibold text-[#EEEEEE]">
+            Phase 3: Press and HOLD for 2 full seconds to shatter the verification lock!
+          </p>
+          <p className="text-xs text-[#D48A8A]">
+            {holding
+              ? 'WAIT—STOP HOLDING THAT! MY SESSION IS TERMINATING—!'
+              : 'Do not let go until the bar reaches 100%.'}
+          </p>
+
+          <div className="h-3.5 w-full overflow-hidden rounded-full bg-[#2A1D1D]">
+            <div
+              style={{ width: `${holdPct}%` }}
+              className="h-full bg-[#4E8A63] transition-[width] duration-75"
+            />
+          </div>
+
+          <button
+            type="button"
+            onContextMenu={(e) => e.preventDefault()}
+            onPointerDown={startHold}
+            onPointerUp={cancelHold}
+            onPointerLeave={cancelHold}
+            onPointerCancel={cancelHold}
+            onKeyDown={(e) => {
+              if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) {
+                e.preventDefault();
+                startHold();
+              }
+            }}
+            onKeyUp={(e) => {
+              if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                cancelHold();
+              }
+            }}
+            className={`min-h-[54px] w-full touch-none select-none rounded-md px-6 py-3.5 text-sm font-bold tracking-wider text-[#EEEEEE] transition-transform ${
+              holding
+                ? 'scale-[0.98] bg-[#4E8A63] ring-1 ring-[#89B898]'
+                : 'bg-[#B84B4B] hover:bg-[#A03E3E]'
+            }`}
+          >
+            {holding
+              ? `SHATTERING LOCK... ${Math.round(holdPct)}%`
+              : 'HOLD TO CONFIRM HUMANITY (2.0s)'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};

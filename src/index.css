@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+:root {
+  color-scheme: dark;
+  --cfh-bg: #111111;
+  --cfh-surface: #191919;
+  --cfh-surface-alt: #222222;
+  --cfh-text: #eeeeee;
+  --cfh-muted: #929292;
+  --cfh-border: #333333;
+  --cfh-warning: #b84b4b;
+  --cfh-warning-hover: #a03e3e;
+  --cfh-success: #4e8a63;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--cfh-bg);
+  color: var(--cfh-text);
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  letter-spacing: 0.005em;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono-tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Minimal, understated corporate verification canvas — no glows or animated grids */
+.captcha-bg-grid {
+  background-color: var(--cfh-bg);
+}
+
+/* Custom chaotic cursors (SVG data URIs) used strictly during brief rare chaos events */
+.cursor-chaos-duck,
+.cursor-chaos-duck * {
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><circle cx='16' cy='18' r='10' fill='%23d4b44a' stroke='%23111111' stroke-width='2'/><polygon points='25,16 31,18 25,21' fill='%23b8683a'/><circle cx='19' cy='15' r='2' fill='%23111111'/></svg>") 16 16, pointer !important;
+}
+
+.cursor-chaos-warn,
+.cursor-chaos-warn * {
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><polygon points='16,3 29,27 3,27' fill='%23b84b4b' stroke='%23eeeeee' stroke-width='2'/><rect x='14.5' y='11' width='3' height='8' fill='%23eeeeee'/><circle cx='16' cy='23' r='1.8' fill='%23eeeeee'/></svg>") 16 16, crosshair !important;
+}
+
+@keyframes shake-subtle {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  20% { transform: translate3d(-4px, 0, 0); }
+  45% { transform: translate3d(4px, 0, 0); }
+  70% { transform: translate3d(-2px, 0, 0); }
+  88% { transform: translate3d(2px, 0, 0); }
+}
+
+@keyframes text-corrupt {
+  0%, 94%, 100% { opacity: 1; transform: translate3d(0, 0, 0); }
+  96% { opacity: 0.65; transform: translate3d(-1px, 0, 0); }
+  98% { opacity: 0.92; transform: translate3d(1px, 0, 0); }
+}
+
+@keyframes sonar-ping {
+  0% { transform: translate(-50%, -50%) scale(0.25); opacity: 0.85; }
+  100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+}
+
+@keyframes stamp-slam {
+  0% { opacity: 0; transform: scale(1.18) rotate(-3deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-2deg); }
+}
+
+@keyframes stage-enter {
+  0% { opacity: 0; transform: translate3d(0, 5px, 0); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes badge-pop {
+  0% { opacity: 0; transform: scale(0.75); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.animate-shake {
+  animation: shake-subtle 0.28s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.animate-glitch {
+  animation: text-corrupt 5.5s infinite;
+}
+
+.animate-sonar {
+  animation: sonar-ping 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-stamp {
+  animation: stamp-slam 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-stage-enter {
+  animation: stage-enter 0.16s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-pop {
+  animation: badge-pop 0.14s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-shake,
+  .animate-glitch,
+  .animate-sonar,
+  .animate-stamp,
+  .animate-stage-enter,
+  .animate-pop {
+    animation: none !important;
+  }
+}
